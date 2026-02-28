@@ -16,6 +16,11 @@ final class CarPlayNowPlaying: NSObject {
 
     super.init()
 
+    // Register as the now-playing template observer so CarPlay notifies us
+    // when the user taps the "Up Next" or album-art buttons on the now-playing
+    // screen. Without this, those taps are silently ignored.
+    template.add(self)
+
     setupButtons()
     setupObserver()
   }
@@ -45,9 +50,17 @@ final class CarPlayNowPlaying: NSObject {
     }
     chaptersButton.isEnabled = hasChapters
 
+    // Sleep timer button — mirrors the sleep-timer feature available in the
+    // iOS full-screen player. Cycles through preset durations so the driver
+    // can set a timer without looking at the screen.
+    let sleepTimerButton = CPNowPlayingImageButton(image: UIImage(systemName: "moon.fill")!) { [weak self] _ in
+      self?.onSleepTimerButtonTapped()
+    }
+
     let buttons: [CPNowPlayingButton] = [
       previousChapterButton,
       playbackRateButton,
+      sleepTimerButton,
       chaptersButton,
       nextChapterButton,
     ]
@@ -146,5 +159,42 @@ final class CarPlayNowPlaying: NSObject {
   private func onChaptersButtonTapped() {
     guard let current = PlayerManager.shared.current else { return }
     chapters.show(for: current)
+  }
+
+  /// Toggles the sleep timer on or off. When no timer is active, starts a
+  /// 15-minute preset. When a timer is already running, cancels it. This
+  /// simple two-state toggle is suited to the limited CarPlay interaction model.
+  private func onSleepTimerButtonTapped() {
+    guard let current = PlayerManager.shared.current else { return }
+
+    let timer = current.timer
+
+    if timer.current != .none {
+      // Timer is running — cancel it.
+      timer.onOffSelected()
+    } else {
+      // No timer active — start a 15-minute preset (the shortest common option).
+      // Uses the same onQuickTimerSelected(_:) method as the iOS timer sheet.
+      timer.onQuickTimerSelected(15)
+    }
+  }
+}
+
+// MARK: - CPNowPlayingTemplateObserver
+// Implementing this protocol lets CarPlay notify us when the user interacts
+// with the "Up Next" or album-art buttons on the now-playing screen.
+// Previously these taps were silently dropped because no observer was registered.
+
+extension CarPlayNowPlaying: CPNowPlayingTemplateObserver {
+  func nowPlayingTemplateUpNextButtonTapped(_ nowPlayingTemplate: CPNowPlayingTemplate) {
+    // Show the chapter list when the user taps "Up Next" — the closest
+    // equivalent to a queue/chapter overview in an audiobook context.
+    guard let current = PlayerManager.shared.current else { return }
+    chapters.show(for: current)
+  }
+
+  func nowPlayingTemplateAlbumArtistButtonTapped(_ nowPlayingTemplate: CPNowPlayingTemplate) {
+    // No-op for now — album/artist drill-down isn't applicable for audiobooks.
+    // Implementing the method prevents a crash if CarPlay invokes it.
   }
 }

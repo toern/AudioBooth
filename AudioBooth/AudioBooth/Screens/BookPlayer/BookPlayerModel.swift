@@ -1029,6 +1029,26 @@ extension BookPlayerModel {
       }
       .store(in: &cancellables)
 
+    // Observe audio route changes (e.g. CarPlay disconnect, headphones unplugged,
+    // Bluetooth lost). Without this, playback continues into the device speaker
+    // when the external output disappears — a common CarPlay complaint.
+    NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] notification in
+        self?.handleRouteChange(notification)
+      }
+      .store(in: &cancellables)
+
+    // Observe when the system indicates that secondary audio should be silenced
+    // (e.g. car navigation voice guidance). Pauses our playback so the user
+    // hears the navigation prompt, then resumes afterward.
+    NotificationCenter.default.publisher(for: AVAudioSession.silenceSecondaryAudioHintNotification)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] notification in
+        self?.handleSilenceSecondaryAudioHint(notification)
+      }
+      .store(in: &cancellables)
+
     volumeObservation = audioSession.observe(\.outputVolume, options: [.old, .new]) { [weak self] _, change in
       guard let self, let old = change.oldValue, let new = change.newValue else { return }
       self.handleVolumeChange(from: old, to: new)
@@ -1201,6 +1221,87 @@ extension BookPlayerModel {
         player?.play()
       }
       interruptionBeganAt = nil
+    }
+  }
+
+  /// Handles audio route changes such as CarPlay disconnect, headphone removal,
+  /// or Bluetooth connection loss. Pauses playback when the old output disappears
+  /// so audio doesn't unexpectedly switch to the built-in speaker.
+  private func handleRouteChange(_ notification: Notification) {
+    guard let userInfo = notification.userInfo,
+      let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
+      let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue)
+    else {
+      return
+    }
+
+    switch reason {
+    case .oldDeviceUnavailable:
+      // The previous output (e.g. CarPlay, Bluetooth, headphones) was removed.
+      // Pause so the user isn't surprised by audio playing through the speaker.
+      guard let previousRoute = userInfo[AVAudioSessionRouteChangePreviousRouteKey] as? AVAudioSessionRouteDescription
+      else { return }
+
+      let hadExternalOutput = previousRoute.outputs.contains { output in
+        [.carAudio, .bluetoothA2DP, .bluetoothHFP, .bluetoothLE, .headphones, .airPlay]
+          .contains(output.portType)
+      }
+
+      if hadExternalOutput && isPlaying {
+        AppLogger.player.info(
+          "Audio route lost (previous: \(previousRoute.outputs.map(\.portType.rawValue))) - pausing playback"
+        )
+        interruptionBeganAt = Date()
+        player?.pause()
+      }
+
+    case .newDeviceAvailable:
+      // A new output appeared (e.g. CarPlay connected, headphones plugged in).
+      // Resume if we were recently paused due to a route loss.
+      if let beganAt = interruptionBeganAt, Date().timeIntervalSince(beganAt) < 60 * 5 {
+        AppLogger.player.info("New audio route available - resuming playback")
+        applySmartRewind(reason: .onInterruption)
+        try? audioSession.setActive(true)
+        player?.play()
+        interruptionBeganAt = nil
+      }
+
+    default:
+      break
+    }
+  }
+
+  /// Handles the system's secondary-audio-silence hint, which fires when another
+  /// audio source (e.g. car navigation turn-by-turn voice) needs priority.
+  /// Pauses our audiobook playback for the duration of the hint so the user
+  /// can hear navigation prompts, then resumes automatically afterward.
+  private func handleSilenceSecondaryAudioHint(_ notification: Notification) {
+    guard let userInfo = notification.userInfo,
+      let typeValue = userInfo[AVAudioSessionSilenceSecondaryAudioHintTypeKey] as? UInt,
+      let type = AVAudioSession.SilenceSecondaryAudioHintType(rawValue: typeValue)
+    else {
+      return
+    }
+
+    switch type {
+    case .begin:
+      if isPlaying {
+        AppLogger.player.info("Secondary audio hint began - pausing for other audio source")
+        interruptionBeganAt = Date()
+        player?.pause()
+      }
+
+    case .end:
+      if let beganAt = interruptionBeganAt, Date().timeIntervalSince(beganAt) < 60 * 5 {
+        AppLogger.player.info("Secondary audio hint ended - resuming playback")
+        applySmartRewind(reason: .onInterruption)
+        try? audioSession.setActive(true)
+        player?.play()
+      }
+      interruptionBeganAt = nil
+
+    @unknown default:
+      break
     }
   }
 }
