@@ -161,9 +161,9 @@ final class CarPlayNowPlaying: NSObject {
     chapters.show(for: current)
   }
 
-  /// Cycles through a set of common sleep-timer durations (15, 30, 45, 60 min)
-  /// or cancels the active timer. Each tap advances to the next preset — a simple
-  /// interaction model suited to the limited CarPlay display.
+  /// Toggles the sleep timer on or off. When no timer is active, starts a
+  /// 15-minute preset. When a timer is already running, cancels it. This
+  /// simple two-state toggle is suited to the limited CarPlay interaction model.
   private func onSleepTimerButtonTapped() {
     guard let current = PlayerManager.shared.current else { return }
 

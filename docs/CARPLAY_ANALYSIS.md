@@ -85,8 +85,12 @@ that commonly occur on the phone.
 
 | # | Issue | iOS Player | CarPlay | Severity |
 |---|-------|-----------|---------|----------|
-| 1 | **Pause on audio route loss** (CarPlay disconnect, headphone removal, Bluetooth loss) | ❌ Not handled | ❌ Not handled | **High** — audio unexpectedly switches to speaker |
-| 2 | **Pause for secondary audio** (navigation prompts, Siri) | ❌ Not handled | ❌ Not handled | **High** — user misses navigation cues |
+| 1 | **Pause on audio route loss** (CarPlay disconnect, headphone removal, Bluetooth loss) | ❌ Was not handled | ❌ Was not handled | **High** — audio unexpectedly switches to speaker |
+| 2 | **Pause for secondary audio** (navigation prompts, Siri) | ❌ Was not handled | ❌ Was not handled | **High** — user misses navigation cues |
+
+> **Note:** Issues 1 and 2 affected _both_ iOS and CarPlay because the fix
+> lives in `BookPlayerModel`, which is the shared player model. The fix
+> therefore benefits both platforms.
 | 3 | **Offline book auto-play** | N/A | ❌ Missing `play()` call | **Medium** — user sees now-playing but must manually press play |
 | 4 | **CPNowPlayingTemplateObserver** | N/A | ❌ Not implemented | **Medium** — "Up Next" button does nothing |
 | 5 | **Sleep timer in CarPlay** | ✅ Full sheet UI | ❌ No button | **Medium** — no way to set sleep timer while driving |
