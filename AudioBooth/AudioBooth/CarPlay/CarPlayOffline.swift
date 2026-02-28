@@ -95,6 +95,9 @@ final class CarPlayOffline {
 
       try? await Task.sleep(for: .milliseconds(500))
 
+      // Start playback automatically — matches the behaviour of CarPlayHome
+      // and CarPlayLibrary, which both call play() after setting the current book.
+      PlayerManager.shared.play()
       nowPlaying?.showNowPlaying()
       completion()
     }
