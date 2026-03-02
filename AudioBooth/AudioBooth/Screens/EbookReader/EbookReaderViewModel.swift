@@ -8,6 +8,7 @@ import ReadiumNavigator
 import ReadiumShared
 import ReadiumStreamer
 import UIKit
+import WebKit
 
 final class EbookReaderViewModel: EbookReaderView.Model {
   enum Source {
@@ -25,6 +26,9 @@ final class EbookReaderViewModel: EbookReaderView.Model {
   private var temporaryFileURL: URL?
 
   private var cancellables = Set<AnyCancellable>()
+  private var autoScrollTask: Task<Void, Never>?
+  private var isAutoScrollPaused: Bool = false
+  private weak var currentScrollView: UIScrollView?
 
   private lazy var assetRetriever = AssetRetriever(
     httpClient: DefaultHTTPClient()
@@ -51,8 +55,23 @@ final class EbookReaderViewModel: EbookReaderView.Model {
       .sink { [weak self] _ in
         guard let self else { return }
         self.applyPreferences(self.preferences)
+        self.updateAutoScroll()
       }
       .store(in: &cancellables)
+
+  }
+
+  override func onShowControlsChanged(_ isVisible: Bool) {
+    isAutoScrollPaused = isVisible
+    updateAutoScroll()
+  }
+
+  private func updateAutoScroll() {
+    if preferences.autoScrollSpeed > 0 && preferences.scroll && !isAutoScrollPaused {
+      startAutoScroll()
+    } else {
+      stopAutoScroll()
+    }
   }
 
   override func onAppear() {
@@ -62,6 +81,7 @@ final class EbookReaderViewModel: EbookReaderView.Model {
   }
 
   override func onDisappear() {
+    stopAutoScroll()
     cleanupTemporaryFile()
   }
 
@@ -132,6 +152,7 @@ final class EbookReaderViewModel: EbookReaderView.Model {
       await setupChapters()
 
       isLoading = false
+      updateAutoScroll()
     } catch {
       AppLogger.viewModel.error("Failed to load ebook: \(error)")
       self.error = "Failed to load ebook. Please try again."
@@ -280,6 +301,57 @@ final class EbookReaderViewModel: EbookReaderView.Model {
     }
   }
 
+  override func onAutoScrollPlayPauseTapped() {
+    isAutoScrollPaused.toggle()
+    updateAutoScroll()
+  }
+
+  private func startAutoScroll() {
+    guard let vc = navigator as? UIViewController else { return }
+    stopAutoScroll()
+    updateCurrentScrollView(in: vc.view)
+    autoScrollTask = Task { [weak self] in
+      guard let self else { return }
+      var lastTime: Date? = nil
+      while !Task.isCancelled {
+        try? await Task.sleep(for: .milliseconds(16))
+        if Task.isCancelled { break }
+        let now = Date()
+        if let last = lastTime, let scrollView = currentScrollView {
+          let elapsed = min(now.timeIntervalSince(last), 0.032)
+          let maxOffset = scrollView.contentSize.height - scrollView.frame.size.height
+          guard scrollView.contentOffset.y < maxOffset else { continue }
+          let delta = max(CGFloat(preferences.autoScrollSpeed * 20 * elapsed), 1)
+          scrollView.contentOffset.y = min(
+            scrollView.contentOffset.y + delta,
+            maxOffset
+          )
+        }
+        lastTime = now
+      }
+    }
+  }
+
+  private func stopAutoScroll() {
+    autoScrollTask?.cancel()
+    autoScrollTask = nil
+  }
+
+  private func updateCurrentScrollView(in view: UIView) {
+    var best: (WKWebView, CGFloat)?
+    let mid = view.window?.bounds.midX ?? 0
+    findWebViews(in: view) { wv in
+      let dist = abs(wv.convert(wv.bounds, to: wv.window).midX - mid)
+      if best == nil || dist < best!.1 { best = (wv, dist) }
+    }
+    currentScrollView = best?.0.scrollView
+  }
+
+  private func findWebViews(in view: UIView, _ collect: (WKWebView) -> Void) {
+    if let wv = view as? WKWebView { collect(wv) }
+    for sub in view.subviews { findWebViews(in: sub, collect) }
+  }
+
   private func applyPreferences(_ preferences: EbookReaderPreferences) {
     guard let epubNavigator = navigator as? EPUBNavigatorViewController else {
       AppLogger.viewModel.info("PDF navigator doesn't support preferences yet")
@@ -417,6 +489,9 @@ extension EbookReaderViewModel: EPUBNavigatorDelegate, PDFNavigatorDelegate, CBZ
     updateProgress()
     updateCurrentChapterIndex()
     syncProgressToServer(progress)
+    if let vc = navigator as? UIViewController {
+      updateCurrentScrollView(in: vc.view)
+    }
   }
 
   func navigator(_ navigator: Navigator, presentError error: NavigatorError) {

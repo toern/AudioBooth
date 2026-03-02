@@ -38,6 +38,19 @@ struct EbookReaderPreferencesView: View {
 
         Section("Layout") {
           Toggle("Scroll Mode", isOn: $preferences.scroll)
+          if preferences.scroll {
+            Stepper(value: $preferences.autoScrollSpeed, in: 0.0...8.0, step: 0.1) {
+              HStack {
+                Text("Auto Scroll")
+                Spacer()
+                Text(
+                  preferences.autoScrollSpeed == 0
+                    ? "Off" : "\(preferences.autoScrollSpeed, format: .number.precision(.fractionLength(1)))×"
+                )
+                .foregroundStyle(.secondary)
+              }
+            }
+          }
           Toggle("Tap to Navigate", isOn: $preferences.tapToNavigate)
 
           if preferences.tapToNavigate, let onEditZones {

@@ -9,6 +9,7 @@ struct EbookReaderView: View {
   @State private var showSettings = false
   @State private var showPlayerSheet = false
   @State private var showZoneEditor = false
+
   @ObservedObject private var playerManager = PlayerManager.shared
   private let userPreferences = UserPreferences.shared
 
@@ -76,6 +77,9 @@ struct EbookReaderView: View {
     .animation(.easeInOut(duration: 0.2), value: showZoneEditor)
     .onChange(of: showZoneEditor) { _, isShowing in
       if isShowing { showControls = false }
+    }
+    .onChange(of: showControls) { _, value in
+      model.onShowControlsChanged(value)
     }
     .sheet(
       isPresented: Binding(
@@ -188,6 +192,8 @@ struct EbookReaderView: View {
         return
       }
       player.onSkipBackwardTapped(seconds: userPreferences.skipBackwardInterval)
+    case .autoScrollPlayPause:
+      model.onAutoScrollPlayPauseTapped()
     }
   }
 
@@ -281,6 +287,8 @@ extension EbookReaderView {
     func onPreferencesChanged(_ preferences: EbookReaderPreferences) {}
     func onTapLeft() {}
     func onTapRight() {}
+    func onAutoScrollPlayPauseTapped() {}
+    func onShowControlsChanged(_ isVisible: Bool) {}
 
     init(
       isLoading: Bool = true,

@@ -10,6 +10,7 @@ enum EbookTapAction: String, CaseIterable, Identifiable, Codable {
   case playPause
   case jumpForward
   case jumpBackward
+  case autoScrollPlayPause
 
   var id: String { rawValue }
 
@@ -20,6 +21,7 @@ enum EbookTapAction: String, CaseIterable, Identifiable, Codable {
     case .playPause: "Play / Pause"
     case .jumpForward: "Jump Forward"
     case .jumpBackward: "Jump Backward"
+    case .autoScrollPlayPause: "Auto Scroll Play / Pause"
     }
   }
 
@@ -30,6 +32,7 @@ enum EbookTapAction: String, CaseIterable, Identifiable, Codable {
     case .playPause: .purple
     case .jumpForward: .orange
     case .jumpBackward: .orange
+    case .autoScrollPlayPause: .teal
     }
   }
 }
@@ -60,6 +63,7 @@ class EbookReaderPreferences: ObservableObject {
   @AppStorage("ebookReader.pageMargins") var pageMargins: PageMargins = .medium
   @AppStorage("ebookReader.scroll") var scroll: Bool = false
   @AppStorage("ebookReader.tapToNavigate") var tapToNavigate: Bool = true
+  @AppStorage("ebookReader.autoScrollSpeed") var autoScrollSpeed: Double = 0.0
 
   @AppStorage("ebookReader.tapZonesData") private var tapZonesData: Data = Data()
 
