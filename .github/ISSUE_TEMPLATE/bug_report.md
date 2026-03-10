@@ -7,6 +7,11 @@ assignees: ''
 
 ---
 
+## Beta Check
+Before opening this issue, please test if the bug is still present in the latest beta version available on [TestFlight](https://testflight.apple.com/join/cAG6dVeN). Investigating issues that are already fixed takes time away from making the app better.
+
+- [ ] I have tested on the latest beta and the issue is still present.
+
 ## Description
 A clear and concise description of the bug.
 
