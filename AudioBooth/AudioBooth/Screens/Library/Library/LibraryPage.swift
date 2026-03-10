@@ -19,13 +19,6 @@ struct LibraryPage: View {
         }
     } else {
       content
-        .searchable(
-          text: $model.search.searchText,
-          prompt: "Filter books"
-        )
-        .onChange(of: model.search.searchText) { _, newValue in
-          model.onSearchChanged(newValue)
-        }
     }
   }
 
@@ -50,16 +43,7 @@ struct LibraryPage: View {
             description: Text("Your library appears to be empty or no library is selected.")
           )
         } else {
-          ScrollView {
-            LibraryView(
-              items: model.items,
-              displayMode: preferences.libraryDisplayMode == .card ? .grid : .list,
-              hasMorePages: model.hasMorePages,
-              onLoadMore: model.loadNextPageIfNeeded
-            )
-            .environment(\.itemDisplayMode, preferences.libraryDisplayMode)
-            .padding(.horizontal)
-          }
+          libraryView
         }
       }
     }
@@ -173,6 +157,37 @@ struct LibraryPage: View {
     .onChange(of: preferences.libraryFilter) { _, newFilter in
       guard model.isRoot else { return }
       model.onFilterPreferenceChanged(newFilter)
+    }
+  }
+
+  var libraryView: some View {
+    ScrollView {
+      Group {
+        if model.isRoot {
+          LibraryView(
+            items: model.items,
+            displayMode: preferences.libraryDisplayMode == .card ? .grid : .list,
+            hasMorePages: model.hasMorePages,
+            onLoadMore: model.loadNextPageIfNeeded
+          )
+        } else {
+          LibraryView(
+            items: model.items,
+            displayMode: preferences.libraryDisplayMode == .card ? .grid : .list,
+            hasMorePages: model.hasMorePages,
+            onLoadMore: model.loadNextPageIfNeeded
+          )
+          .searchable(
+            text: $model.search.searchText,
+            prompt: "Filter books"
+          )
+          .onChange(of: model.search.searchText) { _, newValue in
+            model.onSearchChanged(newValue)
+          }
+        }
+      }
+      .padding(.horizontal)
+      .environment(\.itemDisplayMode, preferences.libraryDisplayMode)
     }
   }
 
