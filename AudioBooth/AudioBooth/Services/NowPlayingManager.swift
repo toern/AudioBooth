@@ -176,6 +176,7 @@ final class NowPlayingManager {
     if !preferences.showFullBookDuration, let chapters, let current = chapters.current {
       info[MPMediaItemPropertyTitle] = current.title
       info[MPMediaItemPropertyArtist] = title
+      info[MPMediaItemPropertyAlbumTitle] = author
       info[MPMediaItemPropertyPlaybackDuration] = current.end - current.start
       info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = chapters.currentElapsedTime(
         currentTime: mediaProgress.currentTime
@@ -184,6 +185,7 @@ final class NowPlayingManager {
     } else {
       info[MPMediaItemPropertyTitle] = title
       info[MPMediaItemPropertyArtist] = author
+      info[MPMediaItemPropertyAlbumTitle] = nil
       info[MPMediaItemPropertyPlaybackDuration] = mediaProgress.duration
       info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = mediaProgress.currentTime
       info[MPNowPlayingInfoPropertyExternalContentIdentifier] = id
