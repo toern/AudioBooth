@@ -211,7 +211,7 @@ final class NetworkService {
       }
       return NetworkResponse(value: decodedValue)
     } catch {
-      if let urlError = error as? URLError {
+      if let urlError = error as? URLError, urlError.code != .cancelled {
         AppLogger.network.error("Network request failed: \(urlError.localizedDescription)")
         server?.status = .connectionError
       }
