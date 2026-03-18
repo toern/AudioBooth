@@ -266,25 +266,27 @@ struct BookPlayer: View {
   private var chaptersDisplay: some View {
     if let chapters = model.chapters, let chapter = chapters.current {
       Button(action: { chapters.isPresented = true }) {
-        HStack {
-          if chapters.chapters.count > 1 {
-            Image(systemName: "list.bullet")
-              .foregroundColor(.white.opacity(0.7))
+        Marquee {
+          HStack {
+            if chapters.chapters.count > 1 {
+              Image(systemName: "list.bullet")
+                .foregroundColor(.white.opacity(0.7))
+            }
+            Text(chapter.title)
+              .foregroundColor(.white)
+              .font(.headline)
           }
-          Text(chapter.title)
-            .foregroundColor(.white)
-            .font(.headline)
-            .lineLimit(1)
         }
         .buttonStyle(.plain)
       }
       .allowsHitTesting(chapters.chapters.count > 1)
       .padding(.horizontal, 8)
     } else {
-      Text(model.title)
-        .foregroundColor(.white)
-        .font(.headline)
-        .lineLimit(1)
+      Marquee {
+        Text(model.title)
+          .foregroundColor(.white)
+          .font(.headline)
+      }
     }
   }
 
