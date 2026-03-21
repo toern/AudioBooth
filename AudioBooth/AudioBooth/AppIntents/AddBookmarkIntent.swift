@@ -13,7 +13,7 @@ struct AddBookmarkIntent: AppIntent {
     description: "The bookmark title",
     requestValueDialog: "What should the bookmark be called?"
   )
-  var content: String
+  var content: String?
 
   static var parameterSummary: some ParameterSummary {
     Summary("Add bookmark \(\.$content)")
@@ -34,9 +34,11 @@ struct AddBookmarkIntent: AppIntent {
       return (currentPlayer.id, currentPlayer.title, time)
     }
 
+    let title = content ?? "Bookmark"
+
     _ = try await BookmarkSyncQueue.shared.create(
       bookID: bookID,
-      title: content,
+      title: title,
       time: time
     )
 
