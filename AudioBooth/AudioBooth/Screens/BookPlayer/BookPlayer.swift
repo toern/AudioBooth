@@ -27,22 +27,9 @@ struct BookPlayer: View {
   var body: some View {
     NavigationStack {
       ZStack {
-        LinearGradient(
-          gradient: Gradient(colors: [Color.black, Color.gray.opacity(0.3)]),
-          startPoint: .top,
-          endPoint: .bottom
-        )
-        .overlay {
-          LazyImage(url: model.coverURL) { state in
-            state.image?
-              .resizable()
-              .aspectRatio(contentMode: .fill)
-              .blur(radius: 10)
-              .opacity(0.3)
-          }
-        }
-        .accessibilityHidden(true)
-        .ignoresSafeArea()
+        playerBackground
+          .accessibilityHidden(true)
+          .ignoresSafeArea()
 
         Group {
           if verticalSizeClass == .compact {
@@ -216,6 +203,34 @@ struct BookPlayer: View {
     }
   }
 
+  @ViewBuilder
+  private var playerBackground: some View {
+    let color = model.backgroundColor
+    let dark = Color(white: 0.1)
+    if #available(iOS 18.0, *) {
+      MeshGradient(
+        width: 3,
+        height: 3,
+        points: [
+          [0, 0], [0.5, 0], [1, 0],
+          [0, 0.5], [0.5, 0.5], [1, 0.5],
+          [0, 1], [0.5, 1], [1, 1],
+        ],
+        colors: [
+          color, color.opacity(0.8), dark,
+          color.opacity(0.6), color.opacity(0.4), dark,
+          dark, dark, dark,
+        ]
+      )
+    } else {
+      LinearGradient(
+        colors: [color, dark],
+        startPoint: .top,
+        endPoint: .bottom
+      )
+    }
+  }
+
   private var portraitLayout: some View {
     VStack(spacing: 0) {
       VStack(spacing: 0) {
@@ -296,6 +311,7 @@ struct BookPlayer: View {
         controlButton(for: control)
       }
     }
+    .foregroundColor(.white.opacity(0.7))
     .padding(.vertical, 12)
     .buttonStyle(.borderless)
   }
@@ -308,11 +324,9 @@ struct BookPlayer: View {
         VStack(spacing: 6) {
           Text(verbatim: "\(String(format: "%.1f", model.speed.value))×")
             .font(.system(size: 16, weight: .medium))
-            .foregroundColor(.white)
             .frame(height: 20)
           Text(control.displayName)
             .font(.caption2)
-            .foregroundColor(.white.opacity(0.7))
         }
       }
       .frame(maxWidth: .infinity)
@@ -322,11 +336,9 @@ struct BookPlayer: View {
         VStack(spacing: 6) {
           Image(systemName: control.systemImage)
             .font(.system(size: 20))
-            .foregroundColor(.white)
             .frame(width: 20, height: 20)
           Text(control.displayName)
             .font(.caption2)
-            .foregroundColor(.white.opacity(0.7))
         }
       }
       .frame(maxWidth: .infinity)
@@ -337,11 +349,9 @@ struct BookPlayer: View {
           VStack(spacing: 6) {
             Image(systemName: control.systemImage)
               .font(.system(size: 20))
-              .foregroundColor(.white)
               .frame(width: 20, height: 20)
             Text(control.displayName)
               .font(.caption2)
-              .foregroundColor(.white.opacity(0.7))
           }
         }
         .frame(maxWidth: .infinity)
@@ -353,11 +363,9 @@ struct BookPlayer: View {
           VStack(spacing: 6) {
             Image(systemName: control.systemImage)
               .font(.system(size: 20))
-              .foregroundColor(.white)
               .frame(width: 20, height: 20)
             Text(control.displayName)
               .font(.caption2)
-              .foregroundColor(.white.opacity(0.7))
           }
         }
         .frame(maxWidth: .infinity)
@@ -368,11 +376,9 @@ struct BookPlayer: View {
         VStack(spacing: 6) {
           Image(systemName: control.systemImage)
             .font(.system(size: 20))
-            .foregroundColor(.white)
             .frame(width: 20, height: 20)
           Text(control.displayName)
             .font(.caption2)
-            .foregroundColor(.white.opacity(0.7))
         }
       }
       .frame(maxWidth: .infinity)
@@ -471,6 +477,7 @@ extension BookPlayer {
     var playbackProgress: PlaybackProgressView.Model
 
     var downloadState: DownloadManager.DownloadState
+    var backgroundColor: Color = .black
 
     var isPresented: Bool = true
     var isSettingsPresented: Bool = false

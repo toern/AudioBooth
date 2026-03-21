@@ -22,10 +22,10 @@ enum PlayerControl: String, CaseIterable, Identifiable, Codable {
   var systemImage: String {
     switch self {
     case .speed: "speedometer"
-    case .timer: "timer"
-    case .bookmarks: "bookmark"
+    case .timer: "moon.zzz.fill"
+    case .bookmarks: "bookmark.fill"
     case .history: "clock.arrow.circlepath"
-    case .volume: "speaker.wave.2"
+    case .volume: "speaker.wave.2.fill"
     }
   }
 

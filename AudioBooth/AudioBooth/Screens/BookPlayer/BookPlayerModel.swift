@@ -516,6 +516,7 @@ extension BookPlayerModel {
 extension BookPlayerModel {
   private func onLoad() {
     isLoading = true
+    loadBackgroundColor()
 
     Task {
       observeMediaProgress()
@@ -542,6 +543,19 @@ extension BookPlayerModel {
       }
 
       isLoading = false
+    }
+  }
+
+  private func loadBackgroundColor() {
+    guard let coverURL else { return }
+    Task {
+      let request = ImageRequest(url: coverURL)
+      guard let image = try? await ImagePipeline.shared.image(for: request),
+        let uiColor = image.averageColor
+      else { return }
+      withAnimation(.easeIn(duration: 0.5)) {
+        self.backgroundColor = Color(uiColor)
+      }
     }
   }
 
