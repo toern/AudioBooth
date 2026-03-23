@@ -101,6 +101,8 @@ final class ChapterPickerSheetViewModel: ChapterPickerSheet.Model {
 
   override func onNextChapterTapped() {
     guard currentIndex < chapters.count - 1 else {
+      mediaProgress.currentTime = mediaProgress.duration
+      player.pause()
       playerManager.playNext()
       return
     }

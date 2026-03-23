@@ -470,6 +470,8 @@ struct BookDetailsView: View {
   private var playButtonText: LocalizedStringResource {
     if model.isPlaying {
       "Pause"
+    } else if model.progressCard?.isFinished == true {
+      "Listen Again"
     } else if model.progress.audio > 0 {
       "Continue Listening"
     } else {

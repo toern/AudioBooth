@@ -471,6 +471,10 @@ final class BookDetailsViewModel: BookDetailsView.Model {
   }
 
   override func onPlayTapped() {
+    if mediaProgress?.isFinished == true {
+      mediaProgress?.currentTime = 0
+    }
+
     if let book {
       if playerManager.current?.id == bookID {
         if let currentPlayer = playerManager.current as? BookPlayerModel {
