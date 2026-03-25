@@ -66,7 +66,8 @@ extension PersistentModel {
         let fetchData = { @MainActor in
           do {
             let items = try ctx.fetch(descriptor)
-            continuation.yield(items)
+            nonisolated(unsafe) let result = items
+            continuation.yield(result)
           } catch {
             continuation.yield([])
           }
