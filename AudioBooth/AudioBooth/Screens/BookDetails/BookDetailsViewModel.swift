@@ -192,6 +192,7 @@ final class BookDetailsViewModel: BookDetailsView.Model {
         series: series,
         coverURL: book.coverURL(raw: true),
         duration: book.duration,
+        size: book.size,
         mediaType: book.mediaType,
         publisher: book.publisher,
         publishedYear: book.publishedYear,
@@ -246,6 +247,7 @@ final class BookDetailsViewModel: BookDetailsView.Model {
     series: [Series],
     coverURL: URL?,
     duration: TimeInterval,
+    size: Int64? = nil,
     mediaType: Book.MediaType?,
     publisher: String? = nil,
     publishedYear: String? = nil,
@@ -292,6 +294,7 @@ final class BookDetailsViewModel: BookDetailsView.Model {
     metadata.publishedYear = publishedYear
     metadata.language = language
     metadata.durationText = durationText
+    metadata.size = size.map { $0.formatted(.byteCount(style: .file)) }
     metadata.hasAudio = hasAudio
     metadata.isEbook = isEbook
 
